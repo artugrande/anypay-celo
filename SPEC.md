@@ -193,20 +193,27 @@ mainnet) to `0xfAcfE00760561fAB2DB764C6a4b2016B38d0e732`.
 
 ## 7. Status
 
-**Done (2026-07-14):**
+**Done (2026-07-14 → 07-15):**
 - ✅ Product concept validated.
 - ✅ Registered on celobuilders, draft saved, **attribution tag obtained** (NOT published yet).
 - ✅ Public repo created with README.
 - ✅ Mento liquidity verified on-chain for KESm/COPm/PHPm.
-- ✅ eve scaffolded, tooled, and deployed to Vercel prod end-to-end (all 4 gotchas solved).
-- ✅ Agent wallet generated.
+- ✅ Agent wallet generated and funded (5 CELO + 5 USDC).
+- ✅ **AnyPay agent built and deployed** to `https://anypay-celo.vercel.app`:
+  `quote_fx` + `pay` tools over a deterministic `swapAndForward` lib (direct Mento router via
+  viem, attribution tag appended to calldata). LLM drives the tools; LLM never touches funds.
+- ✅ **Verified live on mainnet** — real tagged swap+forward delivered:
+  - KESm: [`0x1287…2790`](https://celoscan.io/tx/0x12877974982f4e7d9040f30c26d9aacdf2b3bab64895c6dfde3b855001ee2790) (recipient received 63.97 KESm)
+  - COPm: [`0x0643…0c53`](https://celoscan.io/tx/0x0643925b47be745e3fa493d30e9cb2614368cc1a782d1934eea8df3040320c53) (recipient received 1,622.47 COPm)
+  - Both confirmed via `verifyTx` → `codes: ["celo_a1d871ce7f3a"]`.
 
 **Pending:**
-- ⬜ Fund the agent wallet (Arturo).
-- ⬜ Execute + verify one real tagged swap (the only untested execution path).
-- ⬜ Build the real AnyPay agent (see §8).
+- ⬜ Merchant side: `/register` + settlement sweep (core §1) — not built yet; `/pay` (agent
+  side) is done. Same `swapAndForward` powers both; add a KV `{payTo → currency}` map + a sweep
+  that runs `swapAndForward(currency, settledUsdc, merchantPayTo)`. No LLM in that path.
 - ⬜ For submission by Aug 3: X registration post (`socialLink`), ERC-8004 agent ID
   (`erc8004Url`), agent wallet address field, demo URL — then publish the celobuilders draft.
+- ⬜ Route x402 settlements through the facilitator to the agent wallet (Track 2 counting).
 
 ---
 
