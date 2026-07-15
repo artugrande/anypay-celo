@@ -146,6 +146,16 @@ correctly using both tools, local and in prod. These are the traps — all resol
 - **Tracks entered:** `most-revenue-generated` (Track 1) + `most-x402-payments` (Track 2).
 - **Attribution tag: `celo_a1d871ce7f3a`** — locked to repo `artugrande/anypay-celo`.
 
+### Registration flow (how the tag is obtained)
+Install the Celo Builders skill → connect via Google (one-time browser sign-in; the browser
+shows a short claim code you hand back to the agent — see below) → save a draft submission →
+the tag is returned instantly, derived from and locked to the GitHub repo slug.
+
+![Celo Builders "Login complete" claim-code screen](docs/attribution-tag-connect.png)
+
+*The connection step: after Google sign-in, the browser returns a one-time claim code that the
+agent uses to finish connecting the account. (The code shown is already spent.)*
+
 ### Track 1 — tagging (required, one line)
 Every on-chain tx AnyPay sends (the swaps) must append the tag via `@celo/attribution-tags`:
 ```ts
