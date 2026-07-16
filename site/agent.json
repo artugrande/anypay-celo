@@ -1,0 +1,12 @@
+{
+  "type": "Agent",
+  "name": "AnyPay",
+  "description": "Multi-currency settlement for x402 on Celo. Agents pay in USDC; merchants get paid in their local Mento stablecoin (KESm, COPm, PHPm). AnyPay is the FX leg between dollar-holding agents and local-currency recipients — one HTTP request, one on-chain transaction.",
+  "image": "https://anypay-celo-site.vercel.app/og.png",
+  "endpoints": [
+    { "type": "web", "url": "https://anypay-celo.vercel.app" },
+    { "type": "wallet", "address": "0xfAcfE00760561fAB2DB764C6a4b2016B38d0e732", "chainId": 42220 }
+  ],
+  "supportedTrust": ["reputation"],
+  "capabilities": ["payment", "fx", "x402-settlement", "mento-swap"]
+}
