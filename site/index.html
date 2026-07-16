@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AnyPay — Pay anyone in their local stablecoin, on Celo</title>
+<meta name="description" content="AnyPay is an agent-native payout layer for Celo's x402 facilitator. Agents pay in USDC; merchants get paid in their local Mento stablecoin (KESm, COPm, PHPm) — one HTTP request, one on-chain transaction." />
+<meta property="og:title" content="AnyPay — local-stablecoin payouts for the agent economy" />
+<meta property="og:description" content="Agents pay in USDC. Merchants get paid in their local stablecoin. The missing FX leg for Celo's x402 facilitator." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #050505; --cream: #fbf7ee; --yellow: #fcff52; --mint: #56ff9a;
+    --muted: #9b9b93; --muted2: #b9b9b1;
+    --display: 'Space Grotesk', sans-serif;
+    --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { background: var(--bg); font-family: var(--sans); color: var(--cream); line-height: 1.5;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--yellow); color: var(--bg); }
+  .f-display { font-family: var(--display); }
+  .f-mono { font-family: var(--mono); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @keyframes gridDrift { from { background-position: 0 0; } to { background-position: 0 46px; } }
+  @keyframes glowPulse { 0%,100% { opacity: .45; transform: scale(1); } 50% { opacity: .8; transform: scale(1.1); } }
+  @keyframes shimmer { to { background-position: -200% center; } }
+  @keyframes ringPulse { 0% { box-shadow: 0 0 0 0 rgba(86,255,154,.65); } 70% { box-shadow: 0 0 0 8px rgba(86,255,154,0); } 100% { box-shadow: 0 0 0 0 rgba(86,255,154,0); } }
+
+  .lnk { transition: color .15s; }
+  .lnk:hover { color: var(--yellow); }
+  .btn-yellow { transition: transform .15s, box-shadow .25s; }
+  .btn-yellow:hover { transform: translateY(-2px); box-shadow: 0 12px 34px rgba(252,255,82,.42); }
+  .btn-outline { transition: border-color .2s, background .2s; }
+  .btn-outline:hover { border-color: var(--yellow); background: rgba(252,255,82,.06); }
+  .btn-dark { transition: transform .15s, box-shadow .25s; }
+  .btn-dark:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+  .btn-dark-outline { transition: background .2s, color .2s; }
+  .btn-dark-outline:hover { background: var(--bg); color: var(--yellow); }
+  .card-stat { transition: transform .25s, border-color .25s, background .25s; }
+  .card-stat:hover { border-color: rgba(252,255,82,.45); background: rgba(252,255,82,.04); transform: translateY(-2px); }
+  .card-uc { transition: transform .25s, border-color .25s, background .25s; }
+  .card-uc:hover { transform: translateY(-4px); border-color: rgba(252,255,82,.45); background: rgba(252,255,82,.035); }
+  .card-step { transition: transform .25s, border-color .25s, box-shadow .25s; }
+  .card-step:hover { transform: translateY(-4px); border-color: rgba(0,0,0,.85); box-shadow: 0 18px 40px -22px rgba(0,0,0,.4); }
+  .copybox { transition: border-color .2s; }
+  .copybox:hover { border-color: rgba(252,255,82,.45); }
+  .rowlink { transition: background .15s; }
+  .rowlink:hover { background: rgba(252,255,82,.05); }
+
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase; }
+  .h2 { font-family: var(--display); font-weight: 700; font-size: clamp(34px,4.6vw,54px); line-height: 1.02; letter-spacing: -.025em; margin: 16px 0; }
+
+  @media (max-width: 900px) {
+    .herogrid { grid-template-columns: 1fr !important; }
+    .grid3 { grid-template-columns: 1fr !important; }
+    .grid2 { grid-template-columns: 1fr !important; }
+    .navlinks { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div style="position:relative;width:100%;overflow:hidden">
+
+  <!-- NAV -->
+  <nav style="position:sticky;top:0;z-index:60;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(5,5,5,.66);border-bottom:1px solid rgba(255,255,255,.08)">
+    <div class="wrap" style="height:68px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+      <a href="#top" style="display:flex;align-items:center;gap:10px">
+        <span class="f-display" style="font-weight:700;font-size:21px;letter-spacing:-.02em;color:var(--cream)">Any<span style="color:var(--yellow)">Pay</span></span>
+        <span class="f-mono" style="font-size:11px;color:var(--muted);border:1px solid rgba(255,255,255,.14);padding:2px 7px;border-radius:6px">on Celo</span>
+      </a>
+      <div class="navlinks" style="display:flex;align-items:center;gap:30px;font-size:14.5px;font-weight:500">
+        <a class="lnk" href="#why">Why</a>
+        <a class="lnk" href="#how">How it works</a>
+        <a class="lnk" href="#dashboard">Dashboard</a>
+        <a class="lnk" href="#x402">x402</a>
+        <a class="lnk" href="https://github.com/artugrande/anypay-celo" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+      <a class="btn-yellow" href="https://anypay-celo.vercel.app" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:var(--yellow);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;font-size:14px;white-space:nowrap">Try the agent →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="top" style="position:relative;padding:76px 28px 92px;overflow:hidden">
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:46px 46px;animation:gridDrift 7s linear infinite;-webkit-mask-image:radial-gradient(circle at 52% 38%,#000 0%,transparent 72%);mask-image:radial-gradient(circle at 52% 38%,#000 0%,transparent 72%);pointer-events:none"></div>
+    <div style="position:absolute;top:-12%;right:-4%;width:540px;height:540px;border-radius:50%;background:radial-gradient(circle,rgba(252,255,82,.22),transparent 64%);filter:blur(22px);animation:glowPulse 8s ease-in-out infinite;pointer-events:none"></div>
+    <div style="position:absolute;bottom:-18%;left:-8%;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(86,255,154,.14),transparent 64%);filter:blur(22px);animation:glowPulse 11s ease-in-out infinite;pointer-events:none"></div>
+
+    <div class="herogrid wrap" style="position:relative;z-index:2;display:grid;gap:52px;align-items:center;grid-template-columns:1.05fr 1fr;padding-left:28px;padding-right:28px">
+      <div>
+        <span style="display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:rgba(252,255,82,.1);border:1px solid rgba(252,255,82,.28);color:var(--yellow);font-family:var(--mono);font-size:12px;letter-spacing:.02em;margin-bottom:24px">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--mint);animation:ringPulse 1.9s infinite"></span>live on Celo mainnet
+        </span>
+        <h1 class="f-display" style="font-weight:700;font-size:clamp(44px,6.2vw,78px);line-height:.97;letter-spacing:-.03em">
+          Pay anyone in their <span style="background:linear-gradient(100deg,#fcff52 0%,#56ff9a 45%,#fcff52 90%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:shimmer 5s linear infinite">local stablecoin</span>.
+        </h1>
+        <p style="font-size:17.5px;line-height:1.6;color:var(--muted2);max-width:50ch;margin-top:24px">
+          Agents hold dollars. The people they pay live in shillings, pesos and piso.
+          <strong style="color:var(--cream);font-weight:600">AnyPay is the FX leg</strong> between them — pay in USDC,
+          the recipient gets <strong style="color:var(--cream);font-weight:600">KESm, COPm or PHPm</strong>. One HTTP request, one on-chain transaction.
+        </p>
+        <div style="display:flex;gap:13px;margin-top:32px;flex-wrap:wrap">
+          <a class="btn-yellow" href="https://anypay-celo.vercel.app" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:var(--yellow);color:var(--bg);padding:14px 24px;border-radius:999px;font-weight:600;font-size:15px">Try the live agent</a>
+          <a class="btn-outline" href="#how" style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.18);color:var(--cream);padding:14px 24px;border-radius:999px;font-weight:600;font-size:15px">How it works →</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:22px;margin-top:26px;flex-wrap:wrap">
+          <span class="f-mono" style="font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#7a7a72">powered by</span>
+          <!-- Celo -->
+          <svg height="13" viewBox="0 0 221 50" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.85" aria-label="Celo"><path d="M195.817 43.242C205.954 43.242 214.081 35.0457 214.081 24.9087C214.081 14.7717 205.954 6.64384 195.817 6.64384C185.68 6.64384 177.553 14.8402 177.553 24.9087C177.575 34.9543 185.772 43.242 195.817 43.242ZM170.932 0H220.794V49.863H170.932V0Z" fill="#fff"/><path fill-rule="evenodd" clip-rule="evenodd" d="M98.1487 32.4658C95.2264 38.8128 88.8795 43.242 81.4595 43.242C71.6196 43.242 63.5604 35.3881 63.1951 25.6164H106.413V0H56.5742V49.863H106.436V32.4658H98.1487ZM63.9942 19.4749H98.8108C96.2538 10.9817 89.4046 6.64384 81.4824 6.64384C73.5602 6.64384 66.1859 11.2785 63.9942 19.4749Z" fill="#fff"/><path d="M49.862 0H0V49.863H49.862V32.4658H41.5973C38.7435 38.8128 32.3281 43.242 24.9766 43.242C14.8399 43.242 6.6437 34.9772 6.6437 24.9087C6.6437 14.8402 14.8399 6.64384 24.9766 6.64384C32.4651 6.64384 38.8805 11.21 41.7343 17.6941H49.862V0Z" fill="#fff"/><path d="M164.699 32.4658H156.435C153.946 39.0183 147.234 43.1735 139.609 43.1735C129.769 43.1735 121.481 36.0502 121.481 24.9087V0H113.057V49.863H164.699V32.4658Z" fill="#fff"/></svg>
+          <span style="width:5px;height:5px;border-radius:50%;background:#4a4a44"></span>
+          <!-- Mento -->
+          <svg height="15" viewBox="0 0 108 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.85" aria-label="Mento"><path d="M87.9585 9.13706V3.95939H81.1165V0H75.9699V3.95939H72.337V9.13706H75.9699V16.6904C75.9699 20.9543 79.179 24 83.4173 24H86.7475V18.8223H84.6283C82.5091 18.8223 81.1165 17.6041 81.1165 15.4721V9.13706H87.9585ZM102.853 18.8223V24H95.3454C91.107 24 87.9585 20.9543 87.9585 16.6904V9.13706H93.1051V15.4721C93.1051 17.6041 94.4372 18.8223 96.5564 18.8223H102.853ZM93.1051 9.13706V3.95939H100.613C104.851 3.95939 108 7.00508 108 11.269V18.8223H102.853V12.4873C102.853 10.3553 101.521 9.13706 99.4021 9.13706H93.1051Z" fill="#fff"/><path d="M58.487 23.5688H53.1483V3.96716H58.487V6.20174C59.5001 4.63362 61.5265 3.53592 64.0594 3.53592C68.7746 3.53592 71.5803 6.98581 71.5803 12.0822V23.5688H66.2416V12.9839C66.2416 10.1613 65.0336 8.43633 62.8124 8.43633C60.3574 8.43633 58.487 10.2397 58.487 14.0032V23.5688Z" fill="#fff"/><path fill-rule="evenodd" clip-rule="evenodd" d="M45.8612 17.1786H51.4337C50.2646 21.1382 46.4068 24 41.4578 24C35.4957 24 31.2482 19.6876 31.2482 13.7288C31.2482 7.88748 35.5736 3.53592 41.4968 3.53592C47.2251 3.53592 51.9403 7.65226 51.6675 15.0225H36.4699C36.7037 17.3355 38.4183 19.3348 41.7306 19.3348C43.6011 19.3348 45.2377 18.5116 45.8612 17.1786ZM41.3409 7.88748C43.1724 7.88748 45.1598 8.86756 45.8223 11.4942H36.6647C37.1713 9.338 38.8859 7.88748 41.3409 7.88748Z" fill="#fff"/><path d="M0 23.5688H5.33863V14.0032C5.33863 10.2397 6.93633 8.43633 9.23545 8.43633C11.3397 8.43633 12.275 10.2005 12.275 13.1015V23.5688H17.6136V14.0032C17.6136 10.2397 19.2113 8.43633 21.5104 8.43633C23.6147 8.43633 24.5499 10.2005 24.5499 13.1015V23.5688H29.8886V12.1998C29.8886 6.9074 27.2387 3.53592 22.6015 3.53592C20.3803 3.53592 17.7695 4.71202 16.5615 7.14262C15.3924 4.86884 13.3661 3.53592 10.5214 3.53592C8.14434 3.53592 6.39077 4.67282 5.33863 6.20174V3.96716H0V23.5688Z" fill="#fff"/></svg>
+          <span style="width:5px;height:5px;border-radius:50%;background:#4a4a44"></span>
+          <!-- Vercel -->
+          <svg height="12" viewBox="0 0 1155 1000" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.85" aria-label="Vercel"><path d="m577.3 0 577.4 1000H0z" fill="#fff"/></svg>
+        </div>
+      </div>
+
+      <!-- Request card -->
+      <div style="border-radius:16px;background:#0c0c0c;border:1px solid rgba(255,255,255,.1);overflow:hidden;box-shadow:0 30px 70px -34px rgba(0,0,0,.8)">
+        <div style="height:2px;background:linear-gradient(90deg,transparent,var(--yellow),var(--mint),transparent);background-size:200% auto;animation:shimmer 4s linear infinite"></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,.08)">
+          <span style="width:11px;height:11px;border-radius:50%;background:#ff5f57"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#febc2e"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#28c840"></span>
+          <span class="f-mono" style="margin-left:8px;font-size:12.5px;color:var(--muted)">one request</span>
+        </div>
+        <pre class="f-mono" style="font-size:13.5px;line-height:1.85;overflow-x:auto;color:#e9e9e3;margin:0;padding:20px"><span style="color:var(--mint)">POST</span> /pay
+<span style="color:#6b6b63">{</span>
+  <span style="color:#7fd1ff">"amount"</span>: <span style="color:var(--yellow)">"5"</span>,
+  <span style="color:#7fd1ff">"currency"</span>: <span style="color:var(--yellow)">"KESm"</span>,
+  <span style="color:#7fd1ff">"to"</span>: <span style="color:var(--yellow)">"0x8e19…6fdA"</span>
+<span style="color:#6b6b63">}</span>
+
+<span style="color:#6b6b63">← 200</span>  <span style="color:var(--mint)">settled ✓</span>
+  <span style="color:#7fd1ff">"delivered"</span>: <span style="color:var(--yellow)">"639.7 KESm"</span>
+  <span style="color:#7fd1ff">"tx"</span>: <span style="color:#c79bff">"0x1287…2790"</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div style="background:var(--yellow);color:var(--bg);overflow:hidden;border-top:1px solid rgba(0,0,0,.12);border-bottom:1px solid rgba(0,0,0,.12);padding:16px 0">
+    <div class="f-display" id="marquee" style="display:flex;width:max-content;animation:marquee 28s linear infinite;font-weight:600;font-size:17px;letter-spacing:-.01em"></div>
+  </div>
+
+  <!-- WHY -->
+  <section id="why" style="position:relative;padding:100px 28px;background:var(--bg)">
+    <div class="wrap">
+      <span class="eyebrow" style="color:var(--yellow)">The gap</span>
+      <h2 class="h2">The agent economy<br />is stuck in dollars.</h2>
+      <p style="font-size:17px;color:var(--muted);max-width:60ch;margin-bottom:48px">
+        Celo's x402 facilitator makes any API or agent able to accept stablecoin payments — but it settles in
+        <strong style="color:var(--cream)">USDC only</strong>. Meanwhile Celo's whole point is Mento's local stablecoins,
+        built so value can live in the currency people actually price their lives in. Those two worlds don't connect. AnyPay connects them.
+      </p>
+      <div class="grid3" style="display:grid;gap:16px;grid-template-columns:repeat(3,1fr)">
+        <div class="card-uc" style="border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;background:rgba(255,255,255,.018)">
+          <div class="f-display" style="font-weight:700;font-size:19px;color:var(--cream);margin-bottom:10px">A minimal agent can pay, but can't swap</div>
+          <div style="font-size:14.5px;color:var(--muted);line-height:1.6">An x402 payment is just a signed authorization over HTTP — no gas, no ABIs. But converting USDC to a local stablecoin means gas, approvals, a DEX integration. Most agents can't.</div>
+        </div>
+        <div class="card-uc" style="border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;background:rgba(255,255,255,.018)">
+          <div class="f-display" style="font-weight:700;font-size:19px;color:var(--cream);margin-bottom:10px">Merchants earn dollars they can't spend</div>
+          <div style="font-size:14.5px;color:var(--muted);line-height:1.6">A merchant selling API calls through the facilitator gets USDC. Turning it into the money their community uses is a second, manual DeFi chore.</div>
+        </div>
+        <div class="card-uc" style="border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;background:rgba(255,255,255,.018)">
+          <div class="f-display" style="font-weight:700;font-size:19px;color:var(--cream);margin-bottom:10px">Local stablecoins stay out of the loop</div>
+          <div style="font-size:14.5px;color:var(--muted);line-height:1.6">Dollars circulate between agents; Mento's KESm, COPm and PHPm never reach the recipient. AnyPay gives them a recurring, on-chain source of demand.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" style="position:relative;padding:100px 28px;background:var(--cream);color:#0b0b08">
+    <div class="wrap">
+      <span class="eyebrow" style="color:#7a7a5a">How it works</span>
+      <h2 class="h2">USDC in. Local stablecoin<br />out. One transaction.</h2>
+      <p style="font-size:17px;color:#5b5b50;max-width:58ch;margin-bottom:48px">
+        AnyPay is an <strong style="color:#0b0b08">independent companion agent</strong> for the x402 facilitator — no fork, no facilitator changes. The money path is deterministic on-chain code; an LLM only sits at the front door.
+      </p>
+      <div class="grid2" style="display:grid;gap:15px;grid-template-columns:1fr 1fr">
+        <div class="card-step" style="position:relative;border:1px solid rgba(0,0,0,.12);border-radius:18px;padding:26px;background:rgba(255,255,255,.5);overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#56ff9a"></div>
+          <div class="f-mono" style="font-size:12px;color:#7a7a5a;letter-spacing:.1em">STEP 01</div>
+          <div class="f-display" style="font-weight:700;font-size:19px;margin-top:8px">Agent pays in USDC</div>
+          <div style="font-size:14.5px;color:#5b5b50;margin-top:9px;line-height:1.6">Any agent or app sends a payment — via x402, or a direct call to AnyPay's <span class="f-mono" style="background:rgba(0,0,0,.06);padding:1px 6px;border-radius:5px">/pay</span> endpoint. No DEX, no gas, no approvals on their side.</div>
+        </div>
+        <div class="card-step" style="position:relative;border:1px solid rgba(0,0,0,.12);border-radius:18px;padding:26px;background:rgba(255,255,255,.5);overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#fcff52"></div>
+          <div class="f-mono" style="font-size:12px;color:#7a7a5a;letter-spacing:.1em">STEP 02</div>
+          <div class="f-display" style="font-weight:700;font-size:19px;margin-top:8px">AnyPay swaps via Mento</div>
+          <div style="font-size:14.5px;color:#5b5b50;margin-top:9px;line-height:1.6">The USDC is routed through the Mento broker to the target local stablecoin at oracle price — near-zero slippage, ~0.05% fee.</div>
+        </div>
+        <div class="card-step" style="position:relative;border:1px solid rgba(0,0,0,.12);border-radius:18px;padding:26px;background:rgba(255,255,255,.5);overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#7fd1ff"></div>
+          <div class="f-mono" style="font-size:12px;color:#7a7a5a;letter-spacing:.1em">STEP 03</div>
+          <div class="f-display" style="font-weight:700;font-size:19px;margin-top:8px">Delivered to the recipient</div>
+          <div style="font-size:14.5px;color:#5b5b50;margin-top:9px;line-height:1.6">The swap and the delivery are the <strong>same transaction</strong> — the router sends the local stablecoin straight to the recipient's wallet.</div>
+        </div>
+        <div class="card-step" style="position:relative;border:1px solid rgba(0,0,0,.12);border-radius:18px;padding:26px;background:rgba(255,255,255,.5);overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#c79bff"></div>
+          <div class="f-mono" style="font-size:12px;color:#7a7a5a;letter-spacing:.1em">STEP 04</div>
+          <div class="f-display" style="font-weight:700;font-size:19px;margin-top:8px">Tagged & receipted</div>
+          <div style="font-size:14.5px;color:#5b5b50;margin-top:9px;line-height:1.6">Every swap carries an ERC-8021 attribution tag and returns a tx hash — a verifiable, public receipt on Celoscan.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="dashboard" style="position:relative;padding:100px 28px;background:var(--bg);overflow:hidden">
+    <div style="position:absolute;top:14%;right:-6%;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(86,255,154,.1),transparent 65%);filter:blur(20px);pointer-events:none"></div>
+    <div class="wrap" style="position:relative;z-index:2">
+      <span class="eyebrow" style="color:var(--yellow)">Live on-chain</span>
+      <h2 class="h2">Every payout, on the record.</h2>
+      <p style="font-size:17px;color:var(--muted);max-width:56ch;margin-bottom:14px">
+        Read live from Celo mainnet — the AnyPay agent wallet, its settled payouts, and the volume it has routed. Not a mockup; these are real transactions.
+      </p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:40px">
+        <span class="f-mono" style="font-size:12px;color:#7a7a72">agent wallet</span>
+        <a class="lnk f-mono" href="https://celoscan.io/address/0xfAcfE00760561fAB2DB764C6a4b2016B38d0e732" target="_blank" rel="noreferrer" style="font-size:12.5px;color:var(--mint)">0xfAcfE0…0e732 ↗</a>
+        <span style="width:5px;height:5px;border-radius:50%;background:#4a4a44"></span>
+        <span class="f-mono" style="font-size:12px;color:#7a7a72">tag</span>
+        <span class="f-mono" style="font-size:12.5px;color:var(--yellow)">celo_a1d871ce7f3a</span>
+        <span id="db-status" class="f-mono" style="font-size:11px;color:#7a7a72;margin-left:auto">loading…</span>
+      </div>
+
+      <div class="grid3" style="display:grid;gap:16px;grid-template-columns:repeat(3,1fr);margin-bottom:40px">
+        <div class="card-stat" style="border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;background:rgba(255,255,255,.018)">
+          <div class="f-display" id="stat-payouts" style="font-weight:700;font-size:46px;line-height:1;color:var(--yellow);letter-spacing:-.02em">—</div>
+          <div class="f-mono" style="font-size:13px;color:var(--mint);margin-top:6px">payouts settled</div>
+          <div style="font-size:14px;color:var(--muted);line-height:1.55;margin-top:14px">Successful swap-and-forward transactions from the AnyPay wallet.</div>
+        </div>
+        <div class="card-stat" style="border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;background:rgba(255,255,255,.018)">
+          <div class="f-display" style="font-weight:700;font-size:46px;line-height:1;color:var(--yellow);letter-spacing:-.02em"><span id="stat-volume">—</span><span style="font-size:24px;color:var(--muted2)"> USDC</span></div>
+          <div class="f-mono" style="font-size:13px;color:var(--mint);margin-top:6px">volume routed</div>
+          <div style="font-size:14px;color:var(--muted);line-height:1.55;margin-top:14px">Total USDC converted to local stablecoins and delivered to recipients.</div>
+        </div>
+        <div class="card-stat" style="border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px;background:rgba(255,255,255,.018)">
+          <div class="f-display" id="stat-currencies" style="font-weight:700;font-size:46px;line-height:1;color:var(--yellow);letter-spacing:-.02em">3</div>
+          <div class="f-mono" style="font-size:13px;color:var(--mint);margin-top:6px">currencies live</div>
+          <div style="font-size:14px;color:var(--muted);line-height:1.55;margin-top:14px">KESm · COPm · PHPm — any Mento pair is one line of config away.</div>
+        </div>
+      </div>
+
+      <div style="border:1px solid rgba(255,255,255,.1);border-radius:20px;background:rgba(255,255,255,.018);overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,.08)">
+          <span class="f-display" style="font-weight:600;font-size:17px">Recent payouts</span>
+          <a class="lnk f-mono" href="https://dune.com/celo/agentic-payments-defai-hackathon" target="_blank" rel="noreferrer" style="font-size:12px;color:var(--muted)">hackathon leaderboard ↗</a>
+        </div>
+        <div id="db-rows"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- X402 CONNECTION -->
+  <section id="x402" style="position:relative;padding:100px 28px;background:var(--yellow);color:var(--bg);overflow:hidden">
+    <div style="position:absolute;inset:0;background-image:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1px);background-size:22px 22px;pointer-events:none"></div>
+    <div class="wrap" style="position:relative;z-index:2;max-width:820px">
+      <span class="eyebrow" style="color:#5b5b30">The x402 connection</span>
+      <h2 class="h2">A multi-currency layer<br />on Celo's facilitator.</h2>
+      <p style="font-size:17px;color:#3b3b25;margin-bottom:26px;max-width:60ch">
+        The <a href="https://x402.celo.org" target="_blank" rel="noreferrer" style="border-bottom:1.5px solid rgba(5,5,5,.35)">Celo x402 facilitator</a> settles agent payments in USDC. AnyPay extends it — without touching it — so a merchant can price in dollars and get paid in their local stablecoin.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
+        <div style="display:flex;gap:14px;align-items:flex-start;background:rgba(5,5,5,.05);border:1px solid rgba(5,5,5,.14);border-radius:14px;padding:18px 20px">
+          <span class="f-display" style="font-weight:700;font-size:15px;background:var(--bg);color:var(--yellow);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</span>
+          <div><strong style="font-weight:700">Register once.</strong> A merchant tells AnyPay their wallet and target currency, and gets an AnyPay collection address back.</div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;background:rgba(5,5,5,.05);border:1px solid rgba(5,5,5,.14);border-radius:14px;padding:18px 20px">
+          <span class="f-display" style="font-weight:700;font-size:15px;background:var(--bg);color:var(--yellow);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</span>
+          <div><strong style="font-weight:700">Use it as the <span class="f-mono">payTo</span>.</strong> The merchant puts that address in their HTTP 402 responses. The facilitator settles buyer USDC there, exactly as it does today.</div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:flex-start;background:rgba(5,5,5,.05);border:1px solid rgba(5,5,5,.14);border-radius:14px;padding:18px 20px">
+          <span class="f-display" style="font-weight:700;font-size:15px;background:var(--bg);color:var(--yellow);width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</span>
+          <div><strong style="font-weight:700">AnyPay converts & forwards.</strong> It swaps the settled USDC to the merchant's local stablecoin and delivers it — turning every x402 sale into a local-currency settlement.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:13px;flex-wrap:wrap">
+        <a class="btn-dark" href="https://anypay-celo.vercel.app" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg);color:var(--yellow);padding:14px 24px;border-radius:999px;font-weight:600;font-size:15px">Try the live agent</a>
+        <a class="btn-dark-outline" href="https://github.com/artugrande/anypay-celo" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:transparent;border:1.5px solid var(--bg);color:var(--bg);padding:14px 24px;border-radius:999px;font-weight:600;font-size:15px">View source on GitHub →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="background:var(--bg);color:var(--muted);padding:52px 28px;border-top:1px solid rgba(255,255,255,.08)">
+    <div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;align-items:center">
+      <a href="#top" style="display:flex;align-items:center;gap:9px">
+        <span class="f-display" style="font-weight:700;font-size:18px;color:var(--cream)">Any<span style="color:var(--yellow)">Pay</span></span>
+      </a>
+      <div style="display:flex;gap:26px;font-size:14px">
+        <a class="lnk" href="#why">Why</a>
+        <a class="lnk" href="#how">How it works</a>
+        <a class="lnk" href="#dashboard">Dashboard</a>
+        <a class="lnk" href="https://github.com/artugrande/anypay-celo" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+      <div class="f-mono" style="font-size:13px;opacity:.7">Built on Celo · x402 + Mento</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  // ---- marquee ----
+  (function () {
+    var items = ['KESm', 'COPm', 'PHPm', 'x402 payments', 'Mento FX', 'USDC in', 'one HTTP request', 'local stablecoin out', 'ERC-8021 tagged', 'one transaction', '~0.05% fee', 'non-fork companion agent'];
+    var row = document.getElementById('marquee');
+    function block() {
+      var d = document.createElement('div');
+      d.style.display = 'flex'; d.style.alignItems = 'center';
+      items.forEach(function (t) {
+        var s = document.createElement('span'); s.style.display = 'inline-flex'; s.style.alignItems = 'center'; s.style.whiteSpace = 'nowrap';
+        var a = document.createElement('span'); a.style.padding = '0 22px'; a.textContent = t;
+        var dot = document.createElement('span'); dot.style.width = '6px'; dot.style.height = '6px'; dot.style.borderRadius = '50%'; dot.style.background = '#050505'; dot.style.opacity = '.5';
+        s.appendChild(a); s.appendChild(dot); d.appendChild(s);
+      });
+      return d;
+    }
+    row.appendChild(block()); row.appendChild(block());
+  })();
+
+  // ---- live dashboard ----
+  (function () {
+    var WALLET = '0xfAcfE00760561fAB2DB764C6a4b2016B38d0e732';
+    var USDC = '0xceba9300f2b948710d2653dd7b07f33a8b32118c';
+    var LOCAL = {
+      '456a3d042c0dbd3db53d5489e98dfb038553b0d0': 'KESm',
+      '8a567e2ae79ca692bd748ab832081c45de4041ea': 'COPm',
+      '105d4a9306d2e55a71d2eb95b81553ae1dc20d7b': 'PHPm'
+    };
+    // Verified fallback so the dashboard is never empty on stage.
+    var FALLBACK = [
+      { hash: '0x0643925b47be745e3fa493d30e9cb2614368cc1a782d1934eea8df3040320c53', usdc: 0.5, cur: 'COPm', ts: 1784123303 },
+      { hash: '0x12877974982f4e7d9040f30c26d9aacdf2b3bab64895c6dfde3b855001ee2790', usdc: 0.5, cur: 'KESm', ts: 1784123180 }
+    ];
+    var API = 'https://celo.blockscout.com/api?module=account&action=tokentx&address=' + WALLET + '&contractaddress=' + USDC + '&sort=desc';
+
+    function short(h) { return h.slice(0, 8) + '…' + h.slice(-6); }
+    function ago(ts) {
+      var s = Math.floor(Date.now() / 1000) - ts; if (s < 0) s = 0;
+      if (s < 60) return s + 's ago'; if (s < 3600) return Math.floor(s / 60) + 'm ago';
+      if (s < 86400) return Math.floor(s / 3600) + 'h ago'; return Math.floor(s / 86400) + 'd ago';
+    }
+    function animate(el, target, dp) {
+      var start = performance.now(), dur = 1200;
+      function tick(now) {
+        var p = Math.min(1, (now - start) / dur), e = 1 - Math.pow(1 - p, 3), v = target * e;
+        el.textContent = dp ? v.toFixed(dp) : Math.round(v);
+        if (p < 1) requestAnimationFrame(tick); else el.textContent = dp ? target.toFixed(dp) : target;
+      }
+      requestAnimationFrame(tick);
+    }
+    function render(list, live) {
+      var payouts = list.length;
+      var volume = list.reduce(function (a, r) { return a + r.usdc; }, 0);
+      animate(document.getElementById('stat-payouts'), payouts, 0);
+      animate(document.getElementById('stat-volume'), volume, 2);
+      var box = document.getElementById('db-rows');
+      box.innerHTML = '';
+      list.slice(0, 8).forEach(function (r) {
+        var a = document.createElement('a');
+        a.className = 'rowlink'; a.href = 'https://celoscan.io/tx/' + r.hash; a.target = '_blank'; a.rel = 'noreferrer';
+        a.style.cssText = 'display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:14px;align-items:center;padding:15px 22px;border-bottom:1px solid rgba(255,255,255,.06)';
+        a.innerHTML =
+          '<span class="f-mono" style="font-size:13px;color:#e9e9e3">' + short(r.hash) + '</span>' +
+          '<span style="font-size:14px;color:var(--cream)">' + r.usdc.toFixed(2) + ' <span style="color:var(--muted)">USDC</span></span>' +
+          '<span class="f-mono" style="font-size:12.5px"><span style="color:var(--bg);background:var(--mint);padding:2px 8px;border-radius:6px;font-weight:700">' + (r.cur || 'local') + '</span></span>' +
+          '<span class="f-mono" style="font-size:12px;color:#7a7a72;text-align:right">' + (r.ts ? ago(r.ts) : '') + ' ↗</span>';
+        box.appendChild(a);
+      });
+      document.getElementById('db-status').textContent = live ? 'live · Celo mainnet' : 'showing verified txns';
+      document.getElementById('db-status').style.color = live ? '#56ff9a' : '#7a7a72';
+    }
+
+    fetch(API).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d || d.status === '0' || !Array.isArray(d.result) || !d.result.length) throw new Error('no data');
+      var byTx = {};
+      d.result.forEach(function (t) {
+        if ((t.from || '').toLowerCase() !== WALLET.toLowerCase()) return; // USDC leaving the agent = a payout
+        var h = t.hash;
+        if (!byTx[h]) byTx[h] = { hash: h, usdc: 0, cur: null, ts: parseInt(t.timeStamp, 10) };
+        byTx[h].usdc += Number(t.value) / 1e6;
+        var inp = (t.input || '').toLowerCase();
+        for (var addr in LOCAL) { if (inp.indexOf(addr) !== -1) byTx[h].cur = LOCAL[addr]; }
+      });
+      var list = Object.keys(byTx).map(function (k) { return byTx[k]; }).sort(function (a, b) { return b.ts - a.ts; });
+      if (!list.length) throw new Error('no payouts');
+      render(list, true);
+    }).catch(function () {
+      render(FALLBACK, false);
+    });
+  })();
+</script>
+</body>
+</html>
