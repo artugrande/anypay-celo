@@ -207,13 +207,21 @@ mainnet) to `0xfAcfE00760561fAB2DB764C6a4b2016B38d0e732`.
   - COPm: [`0x0643…0c53`](https://celoscan.io/tx/0x0643925b47be745e3fa493d30e9cb2614368cc1a782d1934eea8df3040320c53) (recipient received 1,622.47 COPm)
   - Both confirmed via `verifyTx` → `codes: ["celo_a1d871ce7f3a"]`.
 
+**Also done (2026-07-17):**
+- ✅ **Merchant side built + verified**: `register_merchant` + `settle_merchant` tools over
+  `settleForMerchant`. merchantId is self-describing (encodes payTo + currency, no DB) — verified
+  register-in-one-session / settle-in-another delivers to the merchant wallet, tagged.
+  Live tx: [`0x7b59…c886`](https://celoscan.io/tx/0x7b5968bfcf3b90f357dfab03cc189757e5fdfbb4f30b3d816e252642b13fc886) (30.4 PHPm).
+- ✅ **ERC-8004 identity registered**: agent ID **9695**, metadata at
+  `anypay-celo-site.vercel.app/agent.json`, scan `https://8004scan.io/agents/celo/9695`.
+- ✅ **Presentation site** live at `https://anypay-celo-site.vercel.app` (live on-chain dashboard).
+- ✅ **celobuilders draft updated** with erc8004Url + agentWalletAddress + demoUrl (still draft).
+
 **Pending:**
-- ⬜ Merchant side: `/register` + settlement sweep (core §1) — not built yet; `/pay` (agent
-  side) is done. Same `swapAndForward` powers both; add a KV `{payTo → currency}` map + a sweep
-  that runs `swapAndForward(currency, settledUsdc, merchantPayTo)`. No LLM in that path.
-- ⬜ For submission by Aug 3: X registration post (`socialLink`), ERC-8004 agent ID
-  (`erc8004Url`), agent wallet address field, demo URL — then publish the celobuilders draft.
-- ⬜ Route x402 settlements through the facilitator to the agent wallet (Track 2 counting).
+- ⬜ **X registration post** (`socialLink`) — the only thing left for the submission. User must
+  post it (tags @CeloDevs + @Celo, includes the 8004 link), then add the URL to the draft & publish.
+- ⬜ x402 buyer-side: route real x402 settlements through the Celo facilitator to the agent wallet
+  for Track 2 counting — needs the user's facilitator API key + a buyer payment to test.
 
 ---
 
