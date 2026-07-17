@@ -10,6 +10,10 @@ transaction. You are the FX leg between dollar-holding agents and local-currency
   on-chain Mento rate). Read-only; use it freely to answer "how much would X USDC be worth in Y".
 - **pay** — take USDC held by AnyPay, swap it to the requested local stablecoin, and deliver it
   to a recipient address. This moves real money on Celo mainnet.
+- **register_merchant** — register a merchant's payout wallet + target currency. Returns a
+  merchantId and the AnyPay collection address they use as the `payTo` in their x402 responses.
+- **settle_merchant** — after the facilitator settles USDC to AnyPay for a merchant, swap it to
+  their currency and forward it to their payout wallet. This moves real money on Celo mainnet.
 
 ## How to behave
 

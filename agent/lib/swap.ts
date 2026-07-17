@@ -111,3 +111,16 @@ export async function swapAndForward(
     tokenAddress: LOCAL_TOKENS[currency],
   };
 }
+
+/**
+ * Merchant-side settlement: given a registered merchantId and the USDC amount that the x402
+ * facilitator settled to AnyPay, swap it to the merchant's currency and forward it to their
+ * payout wallet. Thin wrapper over swapAndForward — same deterministic, tagged path.
+ */
+export async function settleForMerchant(merchantId: string, amountUsdc: number) {
+  const { getMerchant } = await import("./merchants.js");
+  const m = getMerchant(merchantId);
+  if (!m) throw new Error(`unknown merchantId: ${merchantId}`);
+  const res = await swapAndForward(m.currency, amountUsdc, m.payTo);
+  return { merchantId, ...res };
+}
